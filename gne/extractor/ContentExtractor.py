@@ -27,9 +27,21 @@ class ContentExtractor:
         body_xpath = body_xpath or config.get('body', {}).get('xpath', '')
         use_visiable_info = use_visiable_info or config.get('use_visiable_info', False)
         if body_xpath:
-            body = selector.xpath(body_xpath)[0]
+            body_list = selector.xpath(body_xpath)
+            if not body_list:
+                body = selector.xpath('//body')[0]
+            else:
+                body = body_list[0]
         else:
-            body = selector.xpath('//body')[0]
+            # 优先检测 Schema.org articleBody 标记
+            article_body = selector.xpath('//*[@itemprop="articleBody"]')
+            if article_body:
+                body = article_body[0]
+            else:
+                body_list = selector.xpath('//body')
+                if not body_list:
+                    return []
+                body = body_list[0]
         for node in iter_node(body):
             if use_visiable_info:
                 if not node.attrib.get('is_visiable', True):
